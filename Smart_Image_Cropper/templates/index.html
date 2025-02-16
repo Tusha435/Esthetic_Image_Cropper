@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Custom Shape Image Cropper</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #2c3e50;
+            --accent-color: #27ae60;
+            --background-color: #f5f6fa;
+            --card-background: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: var(--secondary-color);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            background-color: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+        }
+
+        select, input[type="number"] {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .image-container {
+            position: relative;
+            background-color: var(--card-background);
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .canvas-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .result-container {
+            background-color: var(--card-background);
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #croppedResult {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        .point-marker {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: move;
+            box-shadow: 0 0 0 2px white;
+        }
+
+        .instructions {
+            background-color: var(--card-background);
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        .effects-panel {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .effect-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .effect-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .effect-btn:hover {
+            background-color: #219a52;
+            transform: translateY(-2px);
+        }
+
+        .effect-btn:active {
+            transform: translateY(0);
+        }
+        .effect-btn[id="retrowaveEffect"] {
+            background-color: #219a52;
+        }
+        .effect-btn[id="dreamEffect"] {
+            background-color: #219a52;
+        }
+        .effect-btn[id="comicEffect"] {
+            background-color: #219a52;
+        }
+        .effect-btn[id="watercolorEffect"] {
+            background-color: #219a52;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Custom Shape Image Cropper</h1>
+        </div>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <p>1. Upload an image</p>
+            <p>2. Select a shape type</p>
+            <p>3. For circle: Click to set center, drag to set radius</p>
+            <p>4. For polygon: Set number of points and click to place them</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <input type="file" id="imageInput" accept="image/*">
+                <select id="shapeSelect">
+                    <option value="circle">Circle</option>
+                    <option value="polygon">Polygon</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="polygonControls" style="display: none;">
+                <label for="pointCount">Number of Points:</label>
+                <input type="number" id="pointCount" min="3" max="10" value="3">
+                
+            </div>
+            <button id="resetPoints">Reset Points</button>
+            <button id="cropButton">Crop Image</button>
+            <button id="saveButton" disabled>Save Image</button>
+            <div class="effects-panel">
+                <h3>Image Effects</h3>
+                <div class="effect-buttons">
+                    <button id="glitchEffect" class="effect-btn">Glitch Art</button>
+                    <button id="neonEffect" class="effect-btn">Neon Glow</button>
+                    <button id="asciiEffect" class="effect-btn">ASCII Art</button>
+                    <button id="pixelEffect" class="effect-btn">Pixel Art</button>
+                    <button id="oilEffect" class="effect-btn">Oil Painting</button>
+                    <button id="retrowaveEffect" class="effect-btn">Retrowave</button>
+                    <button id="dreamEffect" class="effect-btn">Dreamy</button>
+                    <button id="comicEffect" class="effect-btn">Comic</button>
+                    <button id="watercolorEffect" class="effect-btn">Watercolor</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="image-container">
+                <div class="canvas-container">
+                    <canvas id="imageCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="result-container">
+                <h2>Cropped Result</h2>
+                <img id="croppedResult">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas = document.getElementById('imageCanvas');
+        let ctx = canvas.getContext('2d');
+        let imageInput = document.getElementById('imageInput');
+        let shapeSelect = document.getElementById('shapeSelect');
+        let pointCount = document.getElementById('pointCount');
+        let cropButton = document.getElementById('cropButton');
+        let resetButton = document.getElementById('resetPoints');
+        let polygonControls = document.getElementById('polygonControls');
+
+        let points = [];
+        let currentImage = null;
+        let isDrawing = false;
+        let centerPoint = null;
+        let radius = 0;
+
+        // Handle shape type change
+        shapeSelect.addEventListener('change', function() {
+            points = [];
+            centerPoint = null;
+            radius = 0;
+            polygonControls.style.display = 
+                shapeSelect.value === 'polygon' ? 'flex' : 'none';
+            drawImage();
+        });
+
+        // Handle image upload
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    currentImage = img;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    drawImage();
+                };
+                img.src = event.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        });
+
+        // Canvas event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        let scale = 1;
+
+        function setupCanvas(img) {
+            const maxWidth = canvas.parentElement.offsetWidth;
+            const maxHeight = window.innerHeight * 0.7;
+            
+            // Calculate scale while maintaining aspect ratio
+            scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+            
+            // Set displayed canvas size
+            canvas.style.width = img.width * scale + 'px';
+            canvas.style.height = img.height * scale + 'px';
+            
+            // Set actual canvas size
+            canvas.width = img.width;
+            canvas.height = img.height;
+        }
+
+        function getScaledCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function startDrawing(e) {
+            const point = getScaledCoordinates(e);
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (shapeSelect.value === 'circle') {
+                if (!centerPoint) {
+                    centerPoint = point;
+                    isDrawing = true;
+                }
+            } else if (shapeSelect.value === 'polygon') {
+                if (points.length < parseInt(pointCount.value)) {
+                    points.push(point);
+                }
+            }
+            drawImage();
+        }
+
+        function draw(e) {
+            if (!isDrawing || !centerPoint) return;
+            const point = getScaledCoordinates(e);
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (shapeSelect.value === 'circle') {
+                const dx = x - centerPoint.x;
+                const dy = y - centerPoint.y;
+                radius = Math.sqrt(dx * dx + dy * dy);
+                drawImage();
+            }
+        }
+
+        function stopDrawing() {
+            if (shapeSelect.value === 'circle') {
+                isDrawing = false;
+                points = [centerPoint, radius];
+            }
+        }
+
+        function drawImage() {
+            if (!currentImage) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(currentImage, 0, 0);
+            
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2;
+            
+            if (shapeSelect.value === 'circle' && centerPoint) {
+                ctx.beginPath();
+                ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw center point
+                if (isDrawing) {
+                    ctx.fillStyle = '#27ae60';
+                    ctx.beginPath();
+                    ctx.arc(centerPoint.x, centerPoint.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (shapeSelect.value === 'polygon') {
+                if (points.length > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    
+                    for (let i = 1; i < points.length; i++) {
+                        ctx.lineTo(points[i].x, points[i].y);
+                    }
+                    
+                    if (points.length === parseInt(pointCount.value)) {
+                        ctx.closePath();
+                    }
+                    ctx.stroke();
+                    
+                    // Draw points
+                    points.forEach(point => {
+                        ctx.fillStyle = '#27ae60';
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+            }
+        }
+
+        // Reset points
+        resetButton.addEventListener('click', function() {
+            points = [];
+            centerPoint = null;
+            radius = 0;
+            isDrawing=false
+            drawImage();
+        });
+        // Show reset button for both shapes
+        shapeSelect.addEventListener('change', function() {
+            points = [];
+            centerPoint = null;
+            radius = 0;
+            isDrawing = false;
+            document.getElementById('resetPoints').style.display = 'inline-block';
+            polygonControls.style.display = 
+                shapeSelect.value === 'polygon' ? 'flex' : 'none';
+            drawImage();
+        });
+        // Crop functionality
+        cropButton.addEventListener('click', async function() {
+            if (!currentImage) return;
+            if (shapeSelect.value === 'circle' && !centerPoint) return;
+            if (shapeSelect.value === 'polygon' && points.length < 3) return;
+
+            try {
+                const response = await fetch('/crop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: canvas.toDataURL(),
+                        shapeType: shapeSelect.value,
+                        points: shapeSelect.value === 'circle' ? [centerPoint, radius] : points
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('croppedResult').src = data.image;
+                } else {
+                    alert('Error cropping image: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error cropping image: ' + error.message);
+            }
+        });
+        // Enable save button only when we have a cropped result
+        document.getElementById('croppedResult').addEventListener('load', function() {
+            document.getElementById('saveButton').disabled = false;
+        });
+
+        // Save button functionality
+        document.getElementById('saveButton').addEventListener('click', async function() {
+            const croppedImage = document.getElementById('croppedResult').src;
+            if (!croppedImage) return;
+
+            try {
+                const response = await fetch('/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: croppedImage
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('Image saved successfully!');
+                } else {
+                    alert('Error saving image: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error saving image: ' + error.message);
+            }
+        });
+        // Add this to your existing script section
+        document.querySelectorAll('.effect-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const effectType = this.id.replace('Effect', '').toLowerCase();
+                const croppedImage = document.getElementById('croppedResult').src;
+                
+                if (!croppedImage) {
+                    alert('Please crop an image first!');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/apply_effect', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            image: croppedImage,
+                            effectType: effectType
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        document.getElementById('croppedResult').src = data.image;
+                    } else {
+                        alert('Error applying effect: ' + data.message);
+                    }
+                } catch (error) {
+                    alert('Error applying effect: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
